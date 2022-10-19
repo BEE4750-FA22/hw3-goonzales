@@ -41,7 +41,7 @@ and the amount of not-served energy at any given time $nse_t$.
 
 ## Problem 1.2
 
-The objective is to minimize cost, so we seek to minimize the sum of the investment and operating costs. 
+The objective is to minimize cost over the year, so we seek to minimize the sum of the investment and operating costs. 
 If $Z$ is the total cost, $I$ is the investment cost, $O$ is the operating cost, and $NSE$ is the not-served energy cost,
 ```math
 min_{x_g,y_{g,t}}Z = I + O + NSE
@@ -64,10 +64,62 @@ NSE = 365*\sum_{t} $1000*nse_t
 
 ## Problem 1.3
 
+One set of constraints relates to the total generation from each type of generator. 
+Each generator's maximum generation at any given time is the product of their installed capacity and capacity factor.
+```math
+y_{g,t} <= CF_g*x_g
+```
+Another constraint is that the generation from every source plus the not-served energy must equal the total demand. 
+
+If $D$ is the demand at any given hour,
+```math
+y_{g,t} + nse_t = D
+```
+One other constraint is that each generator's installed capacity and generation cannot be negative. 
+The not-served energy also cannot be negative.
+```math
+x_g >= 0 
+y_{g,t} >= 0 
+nse_t >= 0
+```
 
 ## Problem 1.4
 
+```julia
+
+using JuMP
+using HiGHS
+
+#create  model and list of generators
+genmincost = Model(HiGHS.Optimizer)
+generators = ["geothermal","coal","CCGT","CT","Wind","Solar"]
+G = 1:length(generators)
+
+#create variables with nonnegativity constraint
+@variable(genmincost,x[G]>=0)
+@variable(genmincost,y[G,hours]>=0)
+@variable(genmincost,nse[hours]>=0)
+
+#create objective function 
+@objective(genmincost,Min,((sum(investment_cost.*x))+365*(sum(op_cost.*y))+365*(1000*sum(nse))))
+
+#add the capacity and demand constraints
+@constraint(genmincost,thermcapacity[g in (1:4),t in hours],y[g,t]<=x[g]*thermal_cf[g])
+@constraint(genmincost,windcapacity[t in hours],y[5,t]<=x[5]*wind_cf[t])
+@constraint(genmincost,solarcapacity[t in hours],y[6,t]<=x[6]*solar_cf[t])
+@constraint(genmincost,load[t in hours],(sum(y[:,t])+nse[t])==demand[t])
+```
+
 ## Problem 1.5
+
+```julia
+optimize!(genmincost);
+
+using DataFrames
+installedresults = DataFrame("Generation type" => generators,"Installed (MW"=>value.(x).data)
+total_cost = DataFrame("Total Cost (Dollars)"=>objective_value(genmincost))
+nseresults = DataFrame("Time of Day (hr)"=>hours,"Not-Served Energy"=>value.(nse).data)
+```
 
 ## Problem 1.6
 

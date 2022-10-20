@@ -211,6 +211,17 @@ shadow_price(co2emissions)
 For every tonne increase in the CO2 limit, the cost of the system will go down by $\$$130.22. 
 This means, for a 1000 tonne increase in the limit, the cost decreases by $\$$130,220. 
 # References
-https://docs.juliaplots.org/latest/tutorial/
-https://docs.julialang.org/en/v1/stdlib/REPL/
-https://plotly.com/julia/filled-area-plots/
+"Tutorial." (n.d.). Plots. Retreived 10/19/2022 from https://docs.juliaplots.org/latest/tutorial/
+
+"The Julia REPL." (n.d.). Julia. Retrieved 10/19/2022 from https://docs.julialang.org/en/v1/stdlib/REPL/
+
+"Filled Area Plots in Julia." (n.d.). Plotly Graphing Libraries. Retrieved 10/19/2022 from https://plotly.com/julia/filled-area-plots/
+
+AIMMS. (2018). AIMMS Modeling Guide - Sensitivity Analysis. AIMMS. https://download.aimms.com/aimms/download/manuals/AIMMS3OM_SensitivityAnalysis.pdf 
+
+Portland Community College. (n.d.). Essential LaTeX Commands for Mathematics Courses. Retrieved 10/20/2022 from
+https://www.pcc.edu/instructional-support/accessibility/mathscience/latex/#:~:text=dollar%20sign%3A%20%5C%24,Ampersand%3A%20%5C%26
+
+Srikrishnan, v. (2022, October 5). LP Examples: Generating Capacity Expansion [Lecture notes]. BEE 475O. https://viveks.me/environmental-systems-analysis/assets/lecture-notes/11-gencap-expansion/index.html#1 
+
+With help from Ed Discussion and Sophia Bergen. 

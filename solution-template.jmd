@@ -135,7 +135,10 @@ areaplot(hours,value.(y).data',label=["Geothermal" "Coal" "CCGT" "CT" "Wind" "So
 title ="Contribution to Total Demand",
 xlabel = "Time (hours)",ylabel="Generation (MW)")
 ```
-From these graphs, the key takeaways are that 
+From these graphs, the key takeaways are that solar supplies the majority of the energy needed during the day, especially in the afternoon. 
+CCGT supplies most of the energy when solar capacity is low in the early morning/late evening. 
+Wind supplies most of the energy in the night. 
+CT also supplies a small portion of the energy during the early morning/late evening hours, while coal and geothermal supply nothing (which makes sense, because they have no installed capacity). 
 
 # Problem 2
 
@@ -178,8 +181,13 @@ G = 1:length(generators)
 ```julia
 set_silent(genco2cap)
 optimize!(genco2cap)
-
+using DataFrames
+co2results = DataFrame("Generation type" => generators,"Amount To be Built(MW"=>value.(x).data)
 ```
+Unlike in the first model, this model says that we should install geothermal capacity. 
+The original model suggested neither geothermal nor coal capacity should be built, but in this model, only coal has an installed capcity of 0. 
+
+From this CO2-contrained model, we also install less CCGT, CT, and solar. We install more wind here than before.
 
 ## Problem 2.4
 ```Julia
@@ -191,11 +199,17 @@ title = "Generation By Hour",xlabel="Time (hours)",ylabel="Generation (MW)")
 areaplot(hours,value.(y).data',label=["Geothermal" "Coal" "CCGT" "CT" "Wind" "Solar"],
 title ="Contribution to Total Demand",
 xlabel = "Time (hours)",ylabel="Generation (MW)")
-
 ```
+Now, geothermal provides a baseload of power throughout most of the day. 
+It generates energy at a nearly constant rate throughout the day, only dipping in the afternoon. 
+Solar also contributes less to the total demand because geothermal contributes more. 
 
 ## Problem 2.5
-
+```julia
+shadow_price(co2emissions)
+```
+For every tonne increase in the CO2 limit, the cost of the system will go down by $\$$130.22. 
+This means, for a 1000 tonne increase in the limit, the cost decreases by $\$$130,220. 
 # References
 https://docs.juliaplots.org/latest/tutorial/
 https://docs.julialang.org/en/v1/stdlib/REPL/

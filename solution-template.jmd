@@ -141,11 +141,58 @@ From these graphs, the key takeaways are that
 
 ## Problem 2.1
 
+This CO2 limit requires an additional constraint, ensuring that the sum of the CO2 emissions does not exceed the regulatory limit, $R$.
+```math
+\sum_{t} CO2_{2g}*y_{g,t} <= R
+```
+$CO2_{2g}$ represents the tonnes of CO2 emissions per MWH produced by each generation type. 
+
 ## Problem 2.2
+```julia
+using JuMP
+using HiGHS
+
+#create  model and list of generators
+genco2cap = Model(HiGHS.Optimizer)
+generators = ["geothermal","coal","CCGT","CT","Wind","Solar"]
+G = 1:length(generators)
+
+#create variables with nonnegativity constraint
+@variable(genco2cap,x[G]>=0)
+@variable(genco2cap,y[G,hours]>=0)
+@variable(genco2cap,nse[hours]>=0)
+
+#create objective function 
+@objective(genco2cap,Min,((sum(investment_cost.*x))+365*(sum(op_cost.*y))+365*(1000*sum(nse))))
+
+#add the capacity, demand, co2 constraints
+@constraint(genco2cap,thermcapacity[g in (1:4),t in hours],y[g,t]<=x[g]*thermal_cf[g])
+@constraint(genco2cap,windcapacity[t in hours],y[5,t]<=x[5]*wind_cf[t])
+@constraint(genco2cap,solarcapacity[t in hours],y[6,t]<=x[6]*solar_cf[t])
+@constraint(genco2cap,load[t in hours],(sum(y[:,t])+nse[t])==demand[t])
+@constraint(genco2cap,co2emissions,365*sum(co2_emissions.*y)<=(1.5*10^6))
+
+```
 
 ## Problem 2.3
+```julia
+set_silent(genco2cap)
+optimize!(genco2cap)
+
+```
 
 ## Problem 2.4
+```Julia
+value.(y).data
+plotlyjs()
+plot(hours,(value.(y).data)', 
+label=["Geothermal" "Coal" "CCGT" "CT" "Wind" "Solar"],lw=3,
+title = "Generation By Hour",xlabel="Time (hours)",ylabel="Generation (MW)")
+areaplot(hours,value.(y).data',label=["Geothermal" "Coal" "CCGT" "CT" "Wind" "Solar"],
+title ="Contribution to Total Demand",
+xlabel = "Time (hours)",ylabel="Generation (MW)")
+
+```
 
 ## Problem 2.5
 

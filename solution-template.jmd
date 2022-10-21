@@ -57,7 +57,7 @@ O = 365*\sum_t 22*y_{coal,t} + 35*y_{CCGT,t} + 45*y_{CT,t}
 ```
 where $365$ is the number of days in a year, and t is the time of day between the first and twenty-fourth hour. 
 
-$NSE$ is the sum over the year of the product of the not-served energy cost and the amount of energy not served at any given time.
+Lastly, $NSE$ is the sum over the year of the product of the not-served energy cost and the amount of energy not served at any given time.
 ```math
 NSE = 365*\sum_{t} $1000*nse_t
 ```
@@ -73,14 +73,14 @@ Another constraint is that the generation from every source plus the not-served 
 
 If $D$ is the demand at any given hour,
 ```math
-y_{g,t} + nse_t = D
+\sum_g y_{g,t} + nse_t = D_t
 ```
 One other constraint is that each generator's installed capacity and generation cannot be negative. 
 The not-served energy also cannot be negative.
 ```math
-x_g >= 0 
-y_{g,t} >= 0 
-nse_t >= 0
+x_g >= 0\
+y_{g,t} >= 0\
+nse_t >= 0\
 ```
 
 ## Problem 1.4
@@ -113,29 +113,41 @@ G = 1:length(generators)
 ## Problem 1.5
 
 ```julia
-optimize!(genmincost);
+set_silent(genmincost)
+optimize!(genmincost)
+datax = value.(x).data
+datay = value.(y).data
+datacost = objective_value(genmincost)
+datanse = value.(nse).data
 
 using DataFrames
-installedresults = DataFrame("Generation type" => generators,"Installed (MW"=>value.(x).data)
-total_cost = DataFrame("Total Cost (Dollars)"=>objective_value(genmincost))
-nseresults = DataFrame("Time of Day (hr)"=>hours,"Not-Served Energy"=>value.(nse).data)
+installedresults = DataFrame("Generation type" => generators,"Installed (MW"=>datax);
+total_cost = DataFrame("Total Cost (Dollars)"=>datacost);
+nseresults = DataFrame("Time of Day (hr)"=>hours,"Not-Served Energy"=>datanse);
 ```
+`j installedresults`
+`j total_cost`
+`j nseresults`
+
 
 ## Problem 1.6
 
-```julia
+```julia; out_width = 12; out_height = 12; label = "line-plot" 
 import Pkg 
-Pkg.add("PlotlyJS")
-
-plotlyjs()
-plot(hours,(value.(y).data)', 
-label=["Geothermal" "Coal" "CCGT" "CT" "Wind" "Solar"],lw=3,
-title = "Generation By Hour",xlabel="Time (hours)",ylabel="Generation (MW)")
-areaplot(hours,value.(y).data',label=["Geothermal" "Coal" "CCGT" "CT" "Wind" "Solar"],
-title ="Contribution to Total Demand",
-xlabel = "Time (hours)",ylabel="Generation (MW)")
+Pkg.add("PlotlyBase")
+Pkg.add("PlotlyKaleido")
+using Plots 
+plotly()
+plot(hours,(datay)', title = "Generation By Hour",label=["Geothermal" "Coal" "CCGT" "CT" "Wind" "Solar"],xlabel="Time (hours)",ylabel="Generation (MW)")
 ```
-From these graphs, the key takeaways are that solar supplies the majority of the energy needed during the day, especially in the afternoon. 
+
+```julia; label = "area-plot"
+areaplot(hours,datay', title = "Contribution to Total Demand",label=["Geothermal" "Coal" "CCGT" "CT" "Wind" "Solar"],xlabel = "Time (hours)",ylabel="Generation (MW)")
+plot!(hours,demand,color =:blue, label = "Demand",linestyle =:dash)
+```
+#this code doesn't work but it does in other files > will 
+
+From these graphs, the key takeaways are that Solar supplies the majority of the energy needed during the day, especially in the afternoon. 
 CCGT supplies most of the energy when solar capacity is low in the early morning/late evening. 
 Wind supplies most of the energy in the night. 
 CT also supplies a small portion of the energy during the early morning/late evening hours, while coal and geothermal supply nothing (which makes sense, because they have no installed capacity). 
@@ -144,11 +156,13 @@ CT also supplies a small portion of the energy during the early morning/late eve
 
 ## Problem 2.1
 
-This CO2 limit requires an additional constraint, ensuring that the sum of the CO2 emissions does not exceed the regulatory limit, $R$.
+This CO2 limit requires an additional constraint, ensuring that the sum of the CO2 emissions does not exceed the regulatory limit, R.
+
 ```math
-\sum_{t} CO2_{2g}*y_{g,t} <= R
+\sum_{t} CO2_{g}*y_{g,t} <= R
 ```
-$CO2_{2g}$ represents the tonnes of CO2 emissions per MWH produced by each generation type. 
+
+where $CO2_{g}$ represents the tonnes of CO2 emissions per MWH produced by each generation type. 
 
 ## Problem 2.2
 ```julia
@@ -182,23 +196,21 @@ G = 1:length(generators)
 set_silent(genco2cap)
 optimize!(genco2cap)
 using DataFrames
-co2results = DataFrame("Generation type" => generators,"Amount To be Built(MW"=>value.(x).data)
+co2results = DataFrame("Generation type" => generators,"Amount To be Built(MW"=>value.(x).data);
 ```
+`j co2results`
 Unlike in the first model, this model says that we should install geothermal capacity. 
 The original model suggested neither geothermal nor coal capacity should be built, but in this model, only coal has an installed capcity of 0. 
 
 From this CO2-contrained model, we also install less CCGT, CT, and solar. We install more wind here than before.
 
 ## Problem 2.4
-```Julia
-value.(y).data
-plotlyjs()
-plot(hours,(value.(y).data)', 
-label=["Geothermal" "Coal" "CCGT" "CT" "Wind" "Solar"],lw=3,
-title = "Generation By Hour",xlabel="Time (hours)",ylabel="Generation (MW)")
-areaplot(hours,value.(y).data',label=["Geothermal" "Coal" "CCGT" "CT" "Wind" "Solar"],
-title ="Contribution to Total Demand",
-xlabel = "Time (hours)",ylabel="Generation (MW)")
+```julia; out_width = 12; out_height = 12
+using Plots 
+plotly()
+plot(hours,(value.(y).data)', label=["Geothermal" "Coal" "CCGT" "CT" "Wind" "Solar"],lw=3,title = "Generation By Hour",xlabel="Time (hours)",ylabel="Generation (MW)")
+areaplot(hours,value.(y).data',label=["Geothermal" "Coal" "CCGT" "CT" "Wind" "Solar"],title ="Contribution to Total Demand",xlabel = "Time (hours)",ylabel="Generation (MW)")
+plot!(hours,demand,color =:blue, label = "Demand",linestyle =:dash)
 ```
 Now, geothermal provides a baseload of power throughout most of the day. 
 It generates energy at a nearly constant rate throughout the day, only dipping in the afternoon. 
@@ -208,8 +220,9 @@ Solar also contributes less to the total demand because geothermal contributes m
 ```julia
 shadow_price(co2emissions)
 ```
-For every tonne increase in the CO2 limit, the cost of the system will go down by $\$$130.22. 
-This means, for a 1000 tonne increase in the limit, the cost decreases by $\$$130,220. 
+For every tonne increase in the CO2 limit, the cost of the system will go down by 130.22 dollars. 
+This means, for a 1000 tonne increase in the limit, the cost decreases by 130,220 dollars. 
+
 # References
 "Tutorial." (n.d.). Plots. Retreived 10/19/2022 from https://docs.juliaplots.org/latest/tutorial/
 
